@@ -1,0 +1,139 @@
+#include <opencv2/opencv.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include "stdio.h"
+#include "iostream"
+using namespace std;
+using namespace cv;
+
+ VideoCapture cap(0);
+Mat img,frame,img1,img2,img3,img4,img_b;
+vector<vector<Point> > contours;
+vector<Vec4i> heirarchy;
+Rect bounding_rect;
+char str[100];
+char stt[100];
+char sty[100];
+int levels = 0;
+Mat dist_8u;
+int i,t;
+Point pt;
+int l[10],m[10];
+Point c;
+float r=0;
+
+void on_trackbar(int, void *) {
+if(contours.empty()) return;
+
+Mat img_show = img.clone();
+vector<double> areas(contours.size());
+
+for(i = 0; i < contours.size(); i++)
+        {
+            areas[i] = contourArea(Mat(contours[i]));
+        }
+        //get index of largest contour
+        double max;
+        Point maxPosition;
+        minMaxLoc(Mat(areas),0,&max,0,&maxPosition);
+        //draw largest contour.
+        drawContours(img_show, contours, maxPosition.y, Scalar(0,0,255),3);
+
+        //draw bounding rectangle around largest contour
+        Point center;
+        Rect r;
+        if (contours.size() >= 1)
+        {
+            r = boundingRect(contours[maxPosition.y]);
+            rectangle(img, r.tl(),r.br(), CV_RGB(255, 0, 0), 3, 8, 0); //draw rectangle
+        }
+        //get centroid
+        center.x = r.x + (r.width/2);
+        center.y= r.y + (r.height/2);
+        l[t] = center.x;
+        m[t] = center.y;
+
+if((l[6]-l[0])>=300)
+{
+sprintf(sty,"right detection time");
+putText(img_show,sty,Point2f(100,200),FONT_HERSHEY_PLAIN, 2,  Scalar(0,0,255,255));
+}
+
+else if((l[0]-l[6])>=300)
+{
+sprintf(sty,"left detection time");
+putText(img_show,sty,Point2f(100,200),FONT_HERSHEY_PLAIN, 2,  Scalar(0,0,255,255));
+
+}
+else if((m[6]-m[0])>=300)
+{
+sprintf(sty,"down detection time");
+putText(img_show,sty,Point2f(100,200),FONT_HERSHEY_PLAIN, 2,  Scalar(0,0,255,255));
+
+}
+else if((m[0]-m[6])>=300)
+{
+sprintf(sty,"up detection time");
+putText(img_show,sty,Point2f(100,200),FONT_HERSHEY_PLAIN, 2,  Scalar(0,0,255,255));
+
+}
+else
+{
+sprintf(sty,"nothing detection time");
+putText(img_show,sty,Point2f(100,200),FONT_HERSHEY_PLAIN, 2,  Scalar(0,0,255,255));
+
+}
+// Draw contours of the level indicated by slider
+//drawContours(img_show, contours, -1, Scalar(0, 0, 255), 3, 8, heirarchy, levels);
+//rectangle(img_show, bounding_rect,  Scalar(0,255,0),1, 8,0);
+
+
+//sprintf(str,"%d detection time",t);
+//sprintf(stt,"%d detection time",center.y);
+
+putText(img_show,str,Point2f(00,100),FONT_HERSHEY_PLAIN, 2,  Scalar(0,0,255,255));
+putText(img_show,stt,Point2f(100,200),FONT_HERSHEY_PLAIN, 2,  Scalar(0,0,255,255));
+
+
+imshow("Contours", img_show);
+
+if(t<9) t++;
+else t=0;
+}
+int main() {
+i=0;
+while(char(waitKey(300)) != 'q') {
+
+cap >> frame;
+img = frame.clone();
+
+
+cvtColor(img, img_b, CV_RGB2GRAY);
+
+threshold(img_b,img_b, 200,255, CV_THRESH_BINARY);
+
+distanceTransform(img_b,img3,CV_DIST_L2,5);
+normalize(img3, img3, 0, 1.,NORM_MINMAX);
+
+
+threshold(img3, img3, .5, 1., CV_THRESH_BINARY);
+
+img3.convertTo(dist_8u, CV_8U);
+// Extract contours and heirarchy
+findContours(dist_8u, contours, heirarchy, CV_RETR_TREE, CV_CHAIN_APPROX_NONE);
+
+
+namedWindow("Contours",CV_WINDOW_NORMAL);
+setWindowProperty("Contours",CV_WND_PROP_FULLSCREEN,CV_WINDOW_FULLSCREEN);
+createTrackbar("levels", "Contours", &levels, 15, on_trackbar);
+
+// Initialize by drawing the top level contours (as 'levels' is initialized to 0)
+on_trackbar(0, 0);
+
+
+
+
+}
+
+return 0;
+}
