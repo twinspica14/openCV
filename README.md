@@ -1,4 +1,5 @@
 # openCV
+#Most of the codes are modified for learning and For my projects. Tested on CV 2.9 && 2.10 && 2.11
 #using ip camera or any portable phone as camera
 
 RaspberryPi is mostly cheap and good for nothing single board computer compared to its counterpart which are costly.
